@@ -35,7 +35,7 @@ The Loan Approval Model codebase represents a production-grade ML pipeline that 
 
 1. **Clone the Repository**
    ```bash
-   git clone <repository_url>
+   git clone https://github.com/relaxy-intel/relaxy-ai-engineer-exam-question.git
    cd Loan-Approval-Model
    ```
 
@@ -43,11 +43,8 @@ The Loan Approval Model codebase represents a production-grade ML pipeline that 
    ```bash
    python -m venv venv
    
-   # On Unix/MacOS
+   # Activate the venv
    source venv/bin/activate
-   
-   # On Windows
-   venv\Scripts\activate
    ```
 
 3. **Install Dependencies**
