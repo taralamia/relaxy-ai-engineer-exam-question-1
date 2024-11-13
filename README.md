@@ -1,5 +1,8 @@
 # AI Engineer Technical Assessment - Relaxy
 
+![image](https://github.com/user-attachments/assets/3d76f564-458a-4118-b9d1-7d9826cd8652)
+
+
 Dear Candidate,
 
 Welcome to the hands-on technical assessment for the AI Engineer position at Relaxy! We're excited to evaluate your MLOps and engineering capabilities through this practical examination.
@@ -92,4 +95,5 @@ Once you're comfortable with the codebase:
 If you have any questions about the setup or requirements, please don't hesitate to ask. Good luck with your assessment!
 
 Best regards,
+
 The Relaxy Engineering Team
