@@ -12,6 +12,21 @@ In this assessment, you'll be working with our Loan Approval prediction system, 
 You'll be working on implementing critical production features that would help scale and monitor our ML systems. Take your time to understand the existing codebase before diving into the tasks. Remember, we value clean, maintainable code with proper documentation over quick implementations.
 
 ## Getting Started with the Codebase
+```mermaid
+graph TD;
+    A[Loan Approval Model] --> B[requirements.txt]
+    A --> C[.gitignore]
+    A --> D[src]
+    D --> E[main.py]
+    D --> F[data_ingestion]
+    D --> G[data_transformation]
+    D --> H[model_trainer]
+    A --> I[artifacts]
+    I --> J[ingested_data]
+    I --> K[transformed_data]
+    I --> L[models]
+    A --> M[logs]
+```
 
 ### Context
 The Loan Approval Model codebase represents a production-grade ML pipeline that handles loan approval predictions. The system includes modular components for data ingestion, transformation, and model training, built with scalability and maintainability in mind. This foundation provides an excellent starting point for implementing advanced MLOps capabilities.
