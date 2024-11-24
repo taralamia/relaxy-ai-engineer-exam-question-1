@@ -58,7 +58,10 @@ def main():
         create_directories()
         
         # Initialize pipeline components
-        data_ingestion = DataIngestion('dataset/loan_approval_dataset.csv')
+        #file_path = '/root/.local/relaxy-ai-engineer-exam-question-1/src/dataset/loan_approval_dataset.csv'
+
+        data_ingestion = DataIngestion('/root/.local/relaxy-ai-engineer-exam-question-1/src/dataset/loan_approval_dataset.csv')
+
         data_transformation = DataTransformation()
         model_trainer = ModelTrainer()
         
