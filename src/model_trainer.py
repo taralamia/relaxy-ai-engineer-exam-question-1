@@ -56,6 +56,18 @@ class ModelTrainer:
                       y_train: pd.Series, X_test: pd.DataFrame, 
                       y_test: pd.Series) -> Dict[str, float]:
         """Train and evaluate a single model"""
+
+# Clean the data by replacing infinities and dropping NaN values
+        X_train = X_train.replace([np.inf, -np.inf], np.nan).dropna()
+        X_test = X_test.replace([np.inf, -np.inf], np.nan).dropna()
+        y_train = y_train.dropna()
+        y_test = y_test.dropna()
+
+        # Ensure dimensions match after cleaning
+        X_train, y_train = X_train.align(y_train, axis=0, join='inner')
+        X_test, y_test = X_test.align(y_test, axis=0, join='inner')
+
+
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         
