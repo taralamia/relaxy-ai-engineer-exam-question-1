@@ -24,7 +24,7 @@ class ModelTrainer:
         self.transformed_data_dir = "artifacts/transformed_data"
         self.model_dir = "artifacts/models"
         self.models = {
-            "Logistic Regression": LogisticRegression(),
+           "Logistic Regression": LogisticRegression(max_iter=1000), # Increased max_iter
             "Decision Tree": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier(),
             "XGBoost": XGBClassifier(),
