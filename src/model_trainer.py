@@ -24,7 +24,7 @@ class ModelTrainer:
         self.transformed_data_dir = "artifacts/transformed_data"
         self.model_dir = "artifacts/models"
         self.models = {
-           "Logistic Regression": LogisticRegression(max_iter=1000), # Increased max_iter
+            "Logistic Regression": LogisticRegression(max_iter=1000), # Increased max_iter
             "Decision Tree": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier(),
             "XGBoost": XGBClassifier(),
@@ -52,12 +52,11 @@ class ModelTrainer:
             print(f"Error loading transformed data: {str(e)}")
             raise e
     
-    def evaluate_model(self, model: Any, X_train: pd.DataFrame, 
-                      y_train: pd.Series, X_test: pd.DataFrame, 
-                      y_test: pd.Series) -> Dict[str, float]:
+    def evaluate_model(self, model: Any, X_train: pd.DataFrame,
+                       y_train: pd.Series, X_test: pd.DataFrame, 
+                       y_test: pd.Series) -> Dict[str, float]:
         """Train and evaluate a single model"""
-
-# Clean the data by replacing infinities and dropping NaN values
+        # Clean the data by replacing infinities and dropping NaN values
         X_train = X_train.replace([np.inf, -np.inf], np.nan).dropna()
         X_test = X_test.replace([np.inf, -np.inf], np.nan).dropna()
         y_train = y_train.dropna()
@@ -66,15 +65,16 @@ class ModelTrainer:
         # Ensure dimensions match after cleaning
         X_train, y_train = X_train.align(y_train, axis=0, join='inner')
         X_test, y_test = X_test.align(y_test, axis=0, join='inner')
-        # Convert data to numeric if using CatBoost
-    if isinstance(model, CatBoostClassifier):
-        X_train = X_train.astype(float)
-        X_test = X_test.astype(float)
 
-   
+        # Convert data to numpy array if using CatBoost
+        if isinstance(model, CatBoostClassifier):
+            X_train = X_train.to_numpy() 
+            X_test = X_test.to_numpy()
+
+        # Fit the model and evaluate
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
-        
+
         metrics = {
             'Test Accuracy': accuracy_score(y_test, y_pred),
             'Precision': precision_score(y_test, y_pred),
@@ -87,7 +87,7 @@ class ModelTrainer:
     
     def save_models(self, results: Dict[str, Dict]):
         """Save all models and their metrics"""
-        try:
+        try: 
             # Save all models
             for model_name, model in self.models.items():
                 model_path = os.path.join(self.model_dir, f"{model_name.lower().replace(' ', '_')}.joblib")

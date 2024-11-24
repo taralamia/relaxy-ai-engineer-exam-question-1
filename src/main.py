@@ -35,7 +35,7 @@ def create_directories():
         logging.info(f"Created directory: {dir_path}")
 
 def save_pipeline_summary(ingestion_summary: dict, transformation_summary: dict, 
-                        training_summary: pd.DataFrame):
+                          training_summary: pd.DataFrame):
     """Save pipeline execution summary"""
     summary = {
         'data_ingestion': ingestion_summary,
@@ -43,9 +43,13 @@ def save_pipeline_summary(ingestion_summary: dict, transformation_summary: dict,
         'model_training': training_summary.to_dict()
     }
     
-    summary_df = pd.DataFrame(summary)
+    # Use nested DataFrame conversion for compatibility
+    summary_df = pd.DataFrame({
+        "Stage": ["Data Ingestion", "Data Transformation", "Model Training"],
+        "Details": [ingestion_summary, transformation_summary, training_summary.to_dict()],
+    })
     summary_path = f"artifacts/pipeline_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv"
-    summary_df.to_csv(summary_path)
+    summary_df.to_csv(summary_path, index=False)
     logging.info(f"Pipeline summary saved to {summary_path}")
 
 def main():
@@ -58,10 +62,7 @@ def main():
         create_directories()
         
         # Initialize pipeline components
-        #file_path = '/root/.local/relaxy-ai-engineer-exam-question-1/src/dataset/loan_approval_dataset.csv'
-
         data_ingestion = DataIngestion('/root/.local/relaxy-ai-engineer-exam-question-1/src/dataset/loan_approval_dataset.csv')
-
         data_transformation = DataTransformation()
         model_trainer = ModelTrainer()
         
@@ -87,6 +88,8 @@ def main():
         # 3. Model Training and Evaluation
         logger.info("Step 3: Model Training and Evaluation")
         results = model_trainer.initiate_model_training()
+        print("Type of results:", type(results))  # This will print the type of `results`
+        print("Content of results:", results)
         results_df = pd.DataFrame(results).T
         
         # Save results
@@ -94,16 +97,11 @@ def main():
         results_df.to_csv(results_path)
         logger.info(f"Model evaluation results saved to {results_path}")
         
-        # Find and log best model
-        print(results_df.dtypes)  # Check data types
-
-        # Convert 'F1 Score' to numeric
+        # Convert 'F1 Score' to numeric and drop invalid rows
         results_df['F1 Score'] = pd.to_numeric(results_df['F1 Score'], errors='coerce')
-
-        # Drop rows with NaN values in 'F1 Score'
         results_df = results_df.dropna(subset=['F1 Score'])
 
-        # Now you can safely find the best model
+        # Find the best model
         best_model = results_df['F1 Score'].idxmax()
         logger.info(f"Best performing model: {best_model} (F1 Score: {results_df.loc[best_model, 'F1 Score']:.4f})")
         
