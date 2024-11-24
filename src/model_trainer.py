@@ -66,8 +66,12 @@ class ModelTrainer:
         # Ensure dimensions match after cleaning
         X_train, y_train = X_train.align(y_train, axis=0, join='inner')
         X_test, y_test = X_test.align(y_test, axis=0, join='inner')
+        # Convert data to numeric if using CatBoost
+    if isinstance(model, CatBoostClassifier):
+        X_train = X_train.astype(float)
+        X_test = X_test.astype(float)
 
-
+   
         model.fit(X_train, y_train)
         y_pred = model.predict(X_test)
         
