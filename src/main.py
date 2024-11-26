@@ -1,3 +1,5 @@
+import mlflow
+import mlflow.sklearn
 from data_ingestion import DataIngestion
 from data_transformation import DataTransformation
 from model_trainer import ModelTrainer
@@ -58,6 +60,11 @@ def main():
         logger = setup_logging()
         logger.info("Starting ML pipeline...")
         
+        # Set MLFlow tracking URI for cloud storage (S3)
+        mlflow.set_tracking_uri("http://mlflow-server-url:5000")  # If using a centralized MLFlow server (optional)
+        mlflow.set_experiment("Loan_Approval_Experiment")
+        mlflow.start_run()
+
         # Create directories
         create_directories()
         
@@ -88,10 +95,20 @@ def main():
         # 3. Model Training and Evaluation
         logger.info("Step 3: Model Training and Evaluation")
         results = model_trainer.initiate_model_training()
-        print("Type of results:", type(results))  # This will print the type of `results`
-        print("Content of results:", results)
         results_df = pd.DataFrame(results).T
         
+        # Log metrics and parameters with MLFlow
+        for metric in ['accuracy', 'precision', 'recall', 'f1_score']:
+            mlflow.log_metric(metric, results_df.loc[0, metric])
+
+        mlflow.log_params({
+            'training_data_shape': X.shape,
+            'transformed_data_shape': X_transformed.shape
+        })
+
+        # Log the model as an artifact
+        mlflow.sklearn.log_model(model_trainer.best_model, "model")
+
         # Save results
         results_path = os.path.join(model_trainer.model_dir, 'model_evaluation_results.csv')
         results_df.to_csv(results_path)
@@ -126,7 +143,10 @@ def main():
         print(f"- Transformed data: {data_transformation.transformed_data_dir}")
         print(f"- Models: {model_trainer.model_dir}")
         print("-" * 50)
-        
+
+        # End MLFlow run
+        mlflow.end_run()
+
     except Exception as e:
         logger.error(f"Error in ML pipeline: {str(e)}", exc_info=True)
         raise e
