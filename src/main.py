@@ -59,20 +59,20 @@ def main():
         # Setup logging
         logger = setup_logging()
         logger.info("Starting ML pipeline...")
-        
+
         # Set MLFlow tracking URI for cloud storage (S3)
-        mlflow.set_tracking_uri("http://mlflow-server-url:5000")  # If using a centralized MLFlow server (optional)
+        mlflow.set_tracking_uri("http://18.141.222.211:5000")  # MLFlow server URL
         mlflow.set_experiment("Loan_Approval_Experiment")
         mlflow.start_run()
 
         # Create directories
         create_directories()
-        
+
         # Initialize pipeline components
         data_ingestion = DataIngestion('/root/.local/relaxy-ai-engineer-exam-question-1/src/dataset/loan_approval_dataset.csv')
         data_transformation = DataTransformation()
         model_trainer = ModelTrainer()
-        
+
         # 1. Data Ingestion
         logger.info("Step 1: Data Ingestion")
         X, y = data_ingestion.initiate_data_ingestion()
@@ -82,7 +82,7 @@ def main():
             'ingested_data_path': data_ingestion.ingested_data_dir
         }
         logger.info(f"Data ingestion completed. Data saved to {data_ingestion.ingested_data_dir}")
-        
+
         # 2. Data Transformation
         logger.info("Step 2: Data Transformation")
         X_transformed, y = data_transformation.initiate_data_transformation()
@@ -91,12 +91,13 @@ def main():
             'transformed_data_path': data_transformation.transformed_data_dir
         }
         logger.info(f"Data transformation completed. Data saved to {data_transformation.transformed_data_dir}")
-        
+
         # 3. Model Training and Evaluation
         logger.info("Step 3: Model Training and Evaluation")
         results = model_trainer.initiate_model_training()
         results_df = pd.DataFrame(results).T
-        
+        print("Results DataFrame:", results_df)
+
         # Log metrics and parameters with MLFlow
         for metric in ['accuracy', 'precision', 'recall', 'f1_score']:
             mlflow.log_metric(metric, results_df.loc[0, metric])
@@ -113,7 +114,7 @@ def main():
         results_path = os.path.join(model_trainer.model_dir, 'model_evaluation_results.csv')
         results_df.to_csv(results_path)
         logger.info(f"Model evaluation results saved to {results_path}")
-        
+
         # Convert 'F1 Score' to numeric and drop invalid rows
         results_df['F1 Score'] = pd.to_numeric(results_df['F1 Score'], errors='coerce')
         results_df = results_df.dropna(subset=['F1 Score'])
@@ -121,12 +122,12 @@ def main():
         # Find the best model
         best_model = results_df['F1 Score'].idxmax()
         logger.info(f"Best performing model: {best_model} (F1 Score: {results_df.loc[best_model, 'F1 Score']:.4f})")
-        
+
         # Save pipeline summary
         save_pipeline_summary(ingestion_summary, transformation_summary, results_df)
-        
+
         logger.info("ML pipeline completed successfully!")
-        
+
         # Print final summary
         print("\nPipeline Summary:")
         print("-" * 50)
