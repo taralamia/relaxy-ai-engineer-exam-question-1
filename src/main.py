@@ -61,7 +61,7 @@ def main():
         logger.info("Starting ML pipeline...")
 
         # Set MLFlow tracking URI for cloud storage (S3)
-        mlflow.set_tracking_uri("http://18.141.222.211:5000")  # MLFlow server URL
+        #mlflow.set_tracking_uri("http://18.141.222.211:5000")  # MLFlow server URL
         mlflow.set_experiment("Loan_Approval_Experiment")
         mlflow.start_run()
 
@@ -98,9 +98,25 @@ def main():
         results_df = pd.DataFrame(results).T
         print("Results DataFrame:", results_df)
 
+        # Normalize column names and row indices to lowercase
+        results_df.columns = results_df.columns.str.lower()
+        results_df.index = results_df.index.str.lower()
+        print("Normalized columns:", results_df.columns.tolist())
+        print("Normalized row indices:", results_df.index.tolist())
+
         # Log metrics and parameters with MLFlow
-        for metric in ['accuracy', 'precision', 'recall', 'f1_score']:
-            mlflow.log_metric(metric, results_df.loc[0, metric])
+        for model in results_df.index:
+            for metric in ['accuracy', 'precision', 'recall', 'f1_score', 'mcc']:
+                if metric in results_df.columns:
+                    try:
+                        value = results_df.loc[model, metric]
+                        mlflow.log_metric(f"{model}_{metric}", value)
+                    except KeyError as e:
+                        logging.error(f"KeyError while accessing metric '{metric}' for model '{model}': {e}")
+                    except Exception as e:
+                        logging.error(f"Error logging metric '{metric}' for model '{model}': {e}")
+                else:
+                    logging.error(f"Metric '{metric}' not found in results_df columns: {results_df.columns.tolist()}")
 
         mlflow.log_params({
             'training_data_shape': X.shape,
@@ -116,12 +132,12 @@ def main():
         logger.info(f"Model evaluation results saved to {results_path}")
 
         # Convert 'F1 Score' to numeric and drop invalid rows
-        results_df['F1 Score'] = pd.to_numeric(results_df['F1 Score'], errors='coerce')
-        results_df = results_df.dropna(subset=['F1 Score'])
+        results_df['f1_score'] = pd.to_numeric(results_df['f1_score'], errors='coerce')
+        results_df = results_df.dropna(subset=['f1_score'])
 
         # Find the best model
-        best_model = results_df['F1 Score'].idxmax()
-        logger.info(f"Best performing model: {best_model} (F1 Score: {results_df.loc[best_model, 'F1 Score']:.4f})")
+        best_model = results_df['f1_score'].idxmax()
+        logger.info(f"Best performing model: {best_model} (F1 Score: {results_df.loc[best_model, 'f1_score']:.4f})")
 
         # Save pipeline summary
         save_pipeline_summary(ingestion_summary, transformation_summary, results_df)
@@ -138,7 +154,7 @@ def main():
         print(f"- Transformed features shape: {X_transformed.shape}")
         print(f"\nModel Training:")
         print(f"- Best model: {best_model}")
-        print(f"- Best F1 Score: {results_df.loc[best_model, 'F1 Score']:.4f}")
+        print(f"- Best F1 Score: {results_df.loc[best_model, 'f1_score']:.4f}")
         print(f"\nArtifacts saved in:")
         print(f"- Ingested data: {data_ingestion.ingested_data_dir}")
         print(f"- Transformed data: {data_transformation.transformed_data_dir}")

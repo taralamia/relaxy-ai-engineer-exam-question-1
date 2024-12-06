@@ -2,15 +2,15 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, StratifiedKFold
 from sklearn.metrics import (accuracy_score, precision_score, recall_score, 
-                           f1_score, matthews_corrcoef, confusion_matrix)
+                             f1_score, matthews_corrcoef, confusion_matrix)
 import joblib
 import os
 from typing import Dict, Any, Tuple
-
+import datetime
 from sklearn.linear_model import LogisticRegression
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import (RandomForestClassifier, AdaBoostClassifier, 
-                            ExtraTreesClassifier)
+                              ExtraTreesClassifier)
 from xgboost import XGBClassifier
 from lightgbm import LGBMClassifier
 from catboost import CatBoostClassifier
@@ -18,26 +18,28 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
-
 class ModelTrainer:
     def __init__(self):
         self.transformed_data_dir = "artifacts/transformed_data"
         self.model_dir = "artifacts/models"
         self.models = {
-            "Logistic Regression": LogisticRegression(max_iter=1000), # Increased max_iter
+            "Logistic Regression": LogisticRegression(max_iter=2000), # Increased max_iter
             "Decision Tree": DecisionTreeClassifier(),
             "Random Forest": RandomForestClassifier(),
             "XGBoost": XGBClassifier(),
             "LightGBM": LGBMClassifier(),
             "CatBoost": CatBoostClassifier(verbose=0),
-            "SVC": SVC(probability=True),
-            "KNN": KNeighborsClassifier(),
+            "SVC": SVC(probability=True,kernel='rbf', C=1.0),
+            "KNN": KNeighborsClassifier(n_neighbors=7),
             "Naive Bayes": GaussianNB(),
-            "MLP": MLPClassifier(),
+            "MLP": MLPClassifier(hidden_layer_sizes=(100, 50), max_iter=500),
             "AdaBoost": AdaBoostClassifier(),
             "Extra Trees": ExtraTreesClassifier()
         }
-    
+        self.best_model = None  # To hold the best model
+        self.best_model_name = None  # To track the name of the best model
+        self.best_f1_score = 0  # Initialize the best F1 score
+
     def create_directories(self):
         """Create necessary directories for storing models"""
         os.makedirs(self.model_dir, exist_ok=True)
@@ -76,18 +78,29 @@ class ModelTrainer:
         y_pred = model.predict(X_test)
 
         metrics = {
-            'Test Accuracy': accuracy_score(y_test, y_pred),
-            'Precision': precision_score(y_test, y_pred),
-            'Recall': recall_score(y_test, y_pred),
-            'F1 Score': f1_score(y_test, y_pred),
+            'accuracy': accuracy_score(y_test, y_pred),
+            'precision': precision_score(y_test, y_pred),
+            'recall': recall_score(y_test, y_pred),
+            'f1_Score': f1_score(y_test, y_pred),
             'MCC': matthews_corrcoef(y_test, y_pred),
             'Confusion Matrix': confusion_matrix(y_test, y_pred).ravel()
         }
+
+        # Track the best model based on F1 score
+        if metrics['f1_Score'] > self.best_f1_score:
+            self.best_f1_score = metrics['f1_Score']
+            self.best_model = model
+            self.best_model_name = model.__class__.__name__
+
         return metrics
     
-    def save_models(self, results: Dict[str, Dict]):
+    def save_models(self, results: Dict[str, Dict],suffix: str = ""):
         """Save all models and their metrics"""
-        try: 
+        try:
+            timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            run_dir = os.path.join(self.model_dir, f"run_{timestamp}{suffix}")
+            os.makedirs(run_dir, exist_ok=True) 
+
             # Save all models
             for model_name, model in self.models.items():
                 model_path = os.path.join(self.model_dir, f"{model_name.lower().replace(' ', '_')}.joblib")
@@ -95,8 +108,8 @@ class ModelTrainer:
             
             # Save metrics
             results_df = pd.DataFrame(results).T
-            results_df.to_csv(os.path.join(self.model_dir, "model_metrics.csv"))
-            
+            results_df.to_csv(os.path.join(self.model_dir, f"model_metrics_{timestamp}.csv"))
+
             print(f"Models and metrics saved to {self.model_dir}")
             
         except Exception as e:
@@ -122,7 +135,7 @@ class ModelTrainer:
                 print(f"Training and evaluating {model_name}...")
                 metrics = self.evaluate_model(model, X_train, y_train, X_test, y_test)
                 results[model_name] = metrics
-            
+                
             # Save all models and their metrics
             self.save_models(results)
             
@@ -132,11 +145,13 @@ class ModelTrainer:
         except Exception as e:
             print(f"Error in model training: {str(e)}")
             raise e
-
 if __name__ == "__main__":
     model_trainer = ModelTrainer()
     results = model_trainer.initiate_model_training()
-    
+    #results_before = model_trainer.initiate_model_training()
+    #model_trainer.save_models(results_before, suffix="_before")
+    results_after = model_trainer.initiate_model_training()
+    model_trainer.save_models(results_after, suffix="_after")
     # Print results
     results_df = pd.DataFrame(results).T
     print("\nModel Evaluation Results:")
