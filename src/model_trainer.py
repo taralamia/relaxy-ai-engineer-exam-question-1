@@ -18,6 +18,33 @@ from sklearn.svm import SVC
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neural_network import MLPClassifier
+
+def test_with_various_samples(model, X, y, sample_sizes=[0.1, 0.2, 0.5, 1.0]):
+    """Test the model with various data sample sizes"""
+    results = {}
+    for sample_size in sample_sizes:
+        try:
+            if sample_size == 1.0:
+                sample_X, sample_y = X, y
+            else:
+                sample_X, _, sample_y, _ = train_test_split(X, y, test_size=1-sample_size, random_state=42)
+            
+            # Ensure data compatibility for CatBoost
+            if isinstance(model, CatBoostClassifier):
+                sample_X = sample_X.to_numpy()
+                sample_y = sample_y.to_numpy()
+
+            model.fit(sample_X, sample_y)  # Model training
+            y_pred = model.predict(X)
+            accuracy = accuracy_score(y, y_pred)
+            results[sample_size] = accuracy
+            print(f"Test with {sample_size*100}% data: Accuracy = {accuracy}")
+        except Exception as e:
+            print(f"Error testing model with {sample_size*100}% data: {e}")
+    
+    return results
+
+
 class ModelTrainer:
     def __init__(self):
         self.transformed_data_dir = "artifacts/transformed_data"
@@ -70,6 +97,7 @@ class ModelTrainer:
 
         # Convert data to numpy array if using CatBoost
         if isinstance(model, CatBoostClassifier):
+            
             X_train = X_train.to_numpy() 
             X_test = X_test.to_numpy()
 
@@ -136,6 +164,10 @@ class ModelTrainer:
                 metrics = self.evaluate_model(model, X_train, y_train, X_test, y_test)
                 results[model_name] = metrics
                 
+                # Call test_with_various_samples for each model to evaluate performance on different sample sizes
+                print(f"Evaluating {model_name} with different data sample sizes:")
+                sample_results = test_with_various_samples(model, X, y, sample_sizes=[0.1, 0.2, 0.5, 1.0])
+                print(f"Sample results: {sample_results}")
             # Save all models and their metrics
             self.save_models(results)
             
